@@ -29,8 +29,35 @@ async def on_ready():
 	print('EURT bot online!')
 
 @client.event
-async def scrimban(ctx):
+async def ban(ctx):
+	banned = guild.get_role()
+	try:
+		cmd, user, time = ctx.message.content.split(" ", 1)
+	except IndexError:
+		print('Wrong format')
+	await ctx.message.mentions[0].add_roles(banned)
+	post = ["memberName": f"{ctx.message.mentions[0]}", "memberId": f"{ctx.message.mentions[0].id}", "banType":, "bannedBy":f"{ctx.message.author}"]
+	collection.insert_one(post)
+	print('User has been banned')
     
+while True:
+	banned = guild.get_role()#insert role id
+	muted = guild.get_role()
+	for dbFind in collection.find({"banType": "tempBan"}):
+		user = guild.get_member(int(userId))
+		unbanTime = dbFind["unbanTime"]
+		if unbanTime > datetime.datetime.now:
+			return
+		else:
+			await user.remove_roles(Banned)
+	for dbFind in collection.find({"muteType": "tempMute"}):
+		user = guild.get_member(int(userId))
+		unbanTime = dbFind["unmuteTime"]
+		if unmuteTime > datetime.datetime.now:
+			return
+		else:
+			await user.remove_roles(muted)
+	await asyncio.sleep(600)
 
 
 

@@ -318,8 +318,8 @@ async def invites(ctx):
 @client.command()
 @commands.has_role('Staff')
 async def removeteam(ctx):
-	checker = 0
 	x = ctx.message.content 
+	guild = client.get_guild(810954832583852083)
 	try:
 		y = x.split(" ", 2)
 	except Exception:
@@ -328,7 +328,6 @@ async def removeteam(ctx):
 	team1string = y[1]
 	team1string_lowercase = team1string.lower()
 	team1contains_letters = team1string_lowercase.islower()	
-	GUILD = client.get_guild('810954832583852083')
 	if team1contains_letters == False:
 		removalTeam = discord.utils.get(guild.roles, name=f"Team {y[1]}")
 		signedRole = discord.utils.get(guild.roles, name=f"Signed")
@@ -396,14 +395,9 @@ async def on_message_delete(message):
 @client.event 
 async def on_command_error(ctx, error):
 	if isinstance(error, CommandNotFound):
-		if ctx.message.channel.id == 811690381590790215:
-			if ctx.message.author == 816700983899848735:
-				return
-			else:
-				print('1!')
-				signupc = client.get_channel(811690381590790215)
-				embed = discord.Embed(description=f'Wrong format! .signup - @member1@member2@member3....')
-				await signupc.send(embed=embed)
+		if ctx.message.author == 816700983899848735:
+			embed = discord.Embed(description=f'Command not found. Make sure your using the right format')
+			await ctx.send(embed=embed)
 
 @client.command()
 @commands.has_role('Server moderator')
@@ -470,18 +464,16 @@ async def status(ctx):
 
 @client.command()
 async def signup(ctx):
-	if ctx.message.channel.id == 811690381590790215:
+	if "signup" in ctx.message.channel.name:
 		if "-" in ctx.message.content:	
 			global team_limit
 			string = ctx.message.content
 			substring = "@"
 			count = string.count(substring)
-			tl = open("tlimit.txt", "r")
 			sb = open("substring.txt", "w")
 			sb.write(f"{count}")
 			sb.close()
 			sb2 = open("substring.txt", "r")
-			team_limit = tl.read()
 			guild = client.get_guild(810954832583852083)
 			tee1 = discord.utils.get(guild.roles, name="Signed")
 			banned = discord.utils.get(guild.roles, name="Tournament banned")
@@ -489,13 +481,11 @@ async def signup(ctx):
 			msg = ctx.message
 			try:
 				x = ctx.message.content
-				user2, user1 = x.split("-", 2)
+				cmd, user1 = x.split("-", 2)
 			except Exception:
-				embed = discord.Embed(description=f'Error! Remove subs/make sure you only @ {team_limit} members')
+				embed = discord.Embed(description=f'Error! Remove subs/make sure you only @ enough members')
 				await ctx.send(embed=embed)
 				return
-			signup = client.get_channel(812836000228311125)
-			signupc = client.get_channel(811690381590790215)
 			a_string = user1
 			a_string_lowercase = a_string.lower()
 			contains_letters = a_string_lowercase.islower()	
@@ -517,81 +507,33 @@ async def signup(ctx):
 						else:
 							pass
 				if contains_letters == False:
-					if count2 == team_limit:
-						await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied! \nTeam: {user1}***')
-						embed = discord.Embed(description=f'Succes! The bot will dm you when staff has approved your team!')
-						await ctx.send(embed=embed)
-					else:
-						embed = discord.Embed(description=f'Error! Too many/not enough users tagged, do not @ more/less than {team_limit} members')
-						await ctx.send(embed=embed)
-				else:
-					embed = discord.Embed(description=f'Error! Make sure to @ all your members/remove subs from your sign-up message')
-					await ctx.send(embed=embed)
-					return
-			else:
-				embed = discord.Embed(description=f'Error! {member} You need to be in the team your trying to sign up!')
-				await ctx.send(embed=embed)
-				return
-		else:
-			if ctx.message.author.id == 816700983899848735:
-				return
-			else:
-				embed = discord.Embed(description=f'Wrong format! .signup - @member1@member2@member3....')
-				await ctx.send(embed=embed)
-	if ctx.message.channel.id == 832269492582612992: #Insert new signup channel id 
-		if "-" in ctx.message.content:	
-			string = ctx.message.content
-			substring = "@"
-			count = string.count(substring)
-			tl = open("payed_tlimit.txt", "r")
-			sb = open("substring.txt", "w")
-			sb.write(f"{count}")
-			sb.close()
-			sb2 = open("substring.txt", "r")
-			team_limit = tl.read()
-			guild = client.get_guild(810954832583852083)
-			tee1 = discord.utils.get(guild.roles, name="Signed")
-			banned = discord.utils.get(guild.roles, name="Tournament banned")
-			mentions = ""
-			msg = ctx.message
-			try:
-				x = ctx.message.content
-				user2, user1 = x.split("-", 2)
-			except Exception:
-				embed = discord.Embed(description=f'Error! Remove subs/make sure you only @ {team_limit} members')
-				await ctx.send(embed=embed)
-				return
-			signup = client.get_channel(812836000228311125) # Insert new signup accept channel
-			signupc = client.get_channel(811690381590790215)
-			a_string = user1
-			a_string_lowercase = a_string.lower()
-			contains_letters = a_string_lowercase.islower()	
-			count2 = sb2.read()
-			if ctx.message.author in ctx.message.mentions:
-				for mention in msg.mentions:
-					mentions = mentions + " " + mention.mention
-				for mention in msg.mentions:
-					member = mention
-					if tee1 in member.roles:
-						embed = discord.Embed(description=f'{member} is already in a team!')
-						await ctx.send(embed=embed)
-						return
-					else:
-						if banned in member.roles:
-							embed = discord.Embed(description=f'{member} is Tournament banned!')
+					if ctx.message.channel.id == 811690381590790215:
+						tl = open("tlimit.txt", "r")
+						team_limit = tl.read()
+						signup = client.get_channel(812836000228311125)
+						if count2 == team_limit:
+							add_reaction_msg = await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied! \nTeam: {user1}***')
+							embed = discord.Embed(description=f'Succes! The bot will dm you when staff has approved your team!')
+							await add_reaction_msg.add_reaction("✅")
+							await add_reaction_msg.add_reaction("❎")
 							await ctx.send(embed=embed)
-							return
 						else:
-							pass
-				if contains_letters == False:
-					if count2 == team_limit:
-						await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied! \nTeam: {user1}***') # Insert new signup accept channel
-						embed = discord.Embed(description=f'Succes! The bot will dm you when staff has approved your team!\n React with 💰 when your ready to pay, this needs to be done, otherwise your team wont be accepted')
-						reactEmbed = await ctx.send(embed=embed)
-						await reactEmbed.add_reaction("💰")
-					else:
-						embed = discord.Embed(description=f'Error! Too many/not enough users tagged, do not @ more/less than {team_limit} members')
-						await ctx.send(embed=embed)
+							embed = discord.Embed(description=f'Error! Too many/not enough users tagged, do not @ more/less than {team_limit} members')
+							await ctx.send(embed=embed)
+					elif ctx.message.channel.id == 832269492582612992:
+						tl = open("payed_tlimit.txt", "r")
+						team_limit = tl.read()
+						signup = client.get_channel(834439221615001660)
+						if count2 == team_limit:
+							add_reaction_msg = await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied for buy-in tournament! \nTeam: {user1}***') # Insert new signup accept channel
+							embed = discord.Embed(description=f'Succes! The bot will dm you when staff has approved your team!\n React with 💰 when your ready to pay, this needs to be done, otherwise your team wont be accepted')
+							reactEmbed = await ctx.send(embed=embed)
+							await add_reaction_msg.add_reaction("✅")
+							await add_reaction_msg.add_reaction("❎")
+							await reactEmbed.add_reaction("💰")
+						else:
+							embed = discord.Embed(description=f'Error! Too many/not enough users tagged, do not @ more/less than {team_limit} members')
+							await ctx.send(embed=embed)
 				else:
 					embed = discord.Embed(description=f'Error! Make sure to @ all your members/remove subs from your sign-up message')
 					await ctx.send(embed=embed)
@@ -606,73 +548,11 @@ async def signup(ctx):
 			else:
 				embed = discord.Embed(description=f'Wrong format! .signup - @member1@member2@member3....')
 				await ctx.send(embed=embed)
-	else:
-		return
 
 	
 @client.event
 async def on_message(message):
 	await client.process_commands(message)
-	if message.channel.id == 817972037057511454:
-		if message.author.id == 816700983899848735:
-			return
-		else:
-			if ".clear" in message.content:
-				return
-			else:
-				if ".sub" in message.content:
-					return
-				else:
-					substi = client.get_channel(817972037057511454)
-					embed = discord.Embed(description=f'Wrong format! .sub - @user + @user')
-					await substi.send(embed=embed)
-	if message.channel.id == 811690381590790215:
-		if message.author.id == 816700983899848735:
-			return
-		else:
-			if "." in message.content:
-				return
-			else:
-				if "closed" in message.content:
-					return
-				else:
-					signupc = client.get_channel(811690381590790215)
-					embed = discord.Embed(description=f'Wrong format! .signup - @member1@member2@member3....')
-					await signupc.send(embed=embed)
-	if message.channel.id == 811690381590790215:
-		try:
-			print('Deleting message...!2')
-			await asyncio.sleep(4)
-			await message.delete()
-		except Exception:
-			pass
-	if message.channel.id == 817913002120314930:
-		try:
-			print('Deleting message...!')
-			await asyncio.sleep(4)
-			await message.delete()
-		except Exception:
-			pass
-	if message.channel.id == 812836000228311125:
-		if message.author.id == 816700983899848735: 
-			if "Im proccessing previous commands | Wait!" in message.content:
-				try:
-					await asyncio.sleep(3)
-					await message.delete()
-				except Exception:
-					pass
-			else:
-				print('Bot send message')
-				await message.add_reaction('✅')
-				await message.add_reaction('❎')
-				print('It Worked, Reactions added!')
-				return
-	if message.channel.id == 818795394187132938:
-		try:
-			await asyncio.sleep(3)
-			await message.delete()
-		except Exception:
-			pass
 	if message.author.id == 816700983899848735:
 		return 
 	else:
@@ -686,12 +566,6 @@ async def on_message(message):
 			return
 		except Exception:
 			pass
-	if message.content == ".giveaway":
-		guild = client.get_guild(810954832583852083)
-		staff = discord.utils.get(guild.roles, name="Staff")
-		if staff in message.author.roles:
-			embed = discord.Embed(description=f'Wrong format! .giveaway (time),(prize),(url to pic)')
-			await substi.send(embed=embed)
 
 
 @client.command()
@@ -709,29 +583,6 @@ async def say(ctx, channel: discord.TextChannel, *, msg):
 	await ctx.send('Succesful!')
 	await channel.send(f'{msg}')
 
-@client.command()
-@commands.has_role('Server moderator')
-async def send(ctx):
-	channel = client.get_channel(817913002120314930)
-	e = str("Team-counter status:```fix\nPending...\n```")
-	ec =str("Match-board status:```diff\n+Task completed!\n```")
-	a = str("Signup status:```fix\nPending...\n```")
-	ac =str("Match-board status:```diff\n+Task completed!\n```")
-	b = str("Match-board status:```fix\nPending...\n```")
-	bc =str("Match-board status:```diff\n+Task completed!\n```")
-	c = str("Score-channel status:```fix\nPending...\n```")
-	cc =str("Match-board status:```diff\n+Task completed!\n```")
-	d = str("Team-accept status:```fix\nPending...\n```")
-	dc =str("Match-board status:```diff\n+Task completed!\n```")
-	f = str("Team roles clearing status:```fix\nPending...\n```")
-	fc =str("Team roles clearing status:```diff\n+Task completed!\n```")
-	await channel.send(a)
-	await channel.send(b)
-	await channel.send(c)
-	await channel.send(d)
-	await channel.send(e)
-	await channel.send(f)
-
 wait = 0
 
 
@@ -746,7 +597,6 @@ async def sub(ctx):
 	contains_letters = a_string_lowercase.islower()
 	turneybanned = discord.utils.get(ctx.guild.roles, name="Tournament banned")
 	print(contains_letters)
-	signupc = client.get_channel(817972037057511454)
 	if contains_letters == False:
 		for member in ctx.message.mentions:
 			if turneybanned in member.roles:
@@ -794,7 +644,8 @@ async def on_raw_reaction_add(payload):
 	guild = client.get_guild(payload.guild_id)
 	access = discord.utils.get(guild.roles, name="Server moderator")
 	msg = await client.get_channel(payload.channel_id).fetch_message(payload.message_id)
-	if payload.channel_id == 812836000228311125:
+	channel = client.get_channel(payload.channel_id)
+	if channel.name.startswith("teamp-accept"):
 		if payload.user_id == 816700983899848735:
 			return
 		else:
@@ -835,7 +686,8 @@ async def on_raw_reaction_add(payload):
 						else:
 							pass
 				else:
-					await accept.send('```Im proccessing previous commands | Wait!```')	
+					embed = discord.Embed(description=f'Im proccessing previous commands')
+					await accept.send(embed=embed)
 					await msg.remove_reaction(emoji=payload.emoji,member=payload.member)
 					return																															
 			if payload.emoji.name == "❎":
@@ -861,83 +713,41 @@ async def on_raw_reaction_add(payload):
 	if payload.channel_id == 817913002120314930:
 		if payload.emoji.name == "♻️":
 			if access in payload.member.roles:
-				f = str("Team roles clearing status:```fix\nPending...\n Members checked: 0\n```")
-				fc =str("Team roles clearing status:```diff\n+Task completed!\n```")
-				e = str("Team-counter/limit status:```fix\nPending...\n```")
-				ec =str("Team-counter/limit status:```diff\n+Task completed!\n```")
-				a = str("Signup status:```fix\nPending...\n```")
-				ac =str("Signup status:```diff\n+Task completed!\n```")
-				b = str("Subs status:```fix\nPending...\n```")
-				bc =str("Subs status:```diff\n+Task completed!\n```")
-				c = str("Score-channel status:```fix\nPending...\n```")
-				cc =str("Score-channel status:```diff\n+Task completed!\n```")
-				d = str("Team-accept status:```fix\nPending...\n```")
-				dc =str("Team-accept status:```diff\n+Task completed!\n```")
-				channel = client.get_channel(817913002120314930)
-				signups = await channel.fetch_message(817966426097844244)
-				substitutions = await channel.fetch_message(817966427092156416)
-				scorechannels = await channel.fetch_message(817966427927609374)
-				teamaccepts = await channel.fetch_message(817966428568289291)
-				teamcounters = await channel.fetch_message(817966429924098068)
-				teamclearing = await channel.fetch_message(817966447564554273)
+				normal_signups = await guild.get_channel(811690381590790215)
+				buyin_signups = await guild.get_channel(832269492582612992)
+				normal_substitutions = await guild.get_channel(817972037057511454)
+				buyin_substitutions = await guild.get_channel(832269645464731668)
+				normal_scorechannel = await guild.get_channel(812322092023808010)
+				buyin_scorechannel = await guild.get_channel(832269776800710737)
+				normal_teamaccept = await guild.get_channel(812836000228311125)
+				buyin_teamaccept = await guild.get_channel(834439221615001660)
 				signed = discord.utils.get(guild.roles, name="Signed")
-				await signups.edit(content=f'{a}')
-				await substitutions.edit(content=f'{b}')
-				await scorechannels.edit(content=f'{c}')
-				await teamaccepts.edit(content=f'{d}')
-				await teamcounters.edit(content=f'{e}')
-				await teamclearing.edit(content=f'{e}')
-				print('You have access!')
-				resetchannel = client.get_channel(817913002120314930)
-				await resetchannel.send('Clearing... This proccess might take multiple minutes!')
-				await msg.remove_reaction(emoji=payload.emoji,member=payload.member)
-				GUILD = client.get_guild('810954832583852083')
-				amount = 200
-				signupc = client.get_channel(811690381590790215)
-				await signupc.purge(limit=amount)
-				await signupc.send('```Use this format! \n.signup - @member1@member2@member3....```')
-				await signups.edit(content=f'{ac}')
-				await resetchannel.send('Signup channel cleard!')
-				print('Signup channel purged!')
-				subs = client.get_channel(817972037057511454)
-				await subs.purge(limit=amount)
-				await substitutions.edit(content=f'{bc}')
-				await subs.send('```Use this format! \n.sub - (@user1) + (@user2)```')
-				await resetchannel.send('Substitutions channel cleard!')
-				print('Subs channel purged!')
-				score = client.get_channel(812322092023808010)
-				await score.purge(limit=amount)
-				await score.send('```Use this format! \nWin: (@Your team) vs (@Enemy team) score: (score)```')
-				await scorechannels.edit(content=f'{cc}')
-				await resetchannel.send('Score channel cleard!')
-				print('Score channel purged!')
-				ta = client.get_channel(812836000228311125)
-				await ta.purge(limit=amount)
-				await teamaccepts.edit(content=f'{dc}')
-				await resetchannel.send('Team-accept channel cleard!')
-				print('Team Accept channel purged!')
-				tcounter = open("team_counter.txt", "w")
-				tlimit = open("tlimit.txt", "w")
-				tlimit.write('0')
-				await teamcounters.edit(content=f'{ec}')
-				print('Team counter/Team limit has been reset!')
-				await resetchannel.send('Team counter/Team limit has been reset!')
-				print('1')
 				guild = client.get_guild(payload.guild_id)
+				amount = 400
+				await normal_signups.purge(limit=amount)
+				await buyin_signups.purge(limit=amount)
+				await normal_substitutions.purge(limit=amount)
+				await buyin_substitutions.purge(limit=amount)
+				await normal_scorechannel.purge(limit=amount)
+				await buyin_scorechannel.purge(limit=amount)
+				await normal_teamaccept.purge(limit=amount)
+				await buyin_teamaccept.purge(limit=amount)
 				for y in range(1, 65):
-					print(y)
 					team = discord.utils.get(guild.roles, name=f"Team {y}")
 					signed = discord.utils.get(guild.roles, name=f"Signed")
-					print(team)
 					for member in team.members:
-						print(member)
 						await member.remove_roles(team)
 						await member.remove_roles(signed)
 					await asyncio.sleep(1)
-				teamclearing = await channel.fetch_message(817966447564554273)
-				fc =str("Team roles clearing status:```diff\n+Task completed!\n```")
-				await teamclearing.edit(content=f'{fc}')
-				await resetchannel.send('Roles have been reset!')
+				for x in range(1,65):
+					team = discord.utils.get(guild.roles, name=f"Buy-in Team {y}")
+					signed = discord.utils.get(guild.roles, name=f"Signed")
+					for member in team.members:
+						await member.remove_roles(team)
+						await member.remove_roles(signed)
+					await asyncio.sleep(1)
+				await msg.remove_reaction(emoji=payload.emoji,member=payload.member)
+				return
 		else:
 			await msg.remove_reaction(emoji=payload.emoji,member=payload.member)
 			return
@@ -982,41 +792,44 @@ async def on_raw_reaction_add(payload):
 			await ticketChannel.set_permissions(payload.member, view_channel=True)
 			await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
 	if payload.emoji.name == "💰":
-		payloadChannel = client.get_channel(payload.channel_id)
-		if payload.channel_id == 832269492582612992:
-			userMention = f'<@{payload.member.id}>'
-			requestSupportChannel = client.get_channel(830523406348845066)
-			requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058)
-			guild = client.get_guild(810954832583852083)
-			buyinCategory = discord.utils.get(guild.categories, id=832601089936326666) #Put id in
-			for channel in buyinCategory.channels:
-				userName = payload.member.name
-				try:
-					channelNameSplit = channel.name
-					ticket, name = channelNameSplit.split("-", 1)
-					if userName.lower() == name:
-						await channel.send(userMention)
-						embed = discord.Embed(description='You need to close this ticket to open another one!')
-						await channel.send(embed=embed)
-						await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
-						return
-					else:
+		if payload.member.id == 816700983899848735:
+			return
+		else:
+			payloadChannel = client.get_channel(payload.channel_id)
+			if payload.channel_id == 832269492582612992:
+				userMention = f'<@{payload.member.id}>'
+				requestSupportChannel = client.get_channel(830523406348845066)
+				requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058)
+				guild = client.get_guild(810954832583852083)
+				buyinCategory = discord.utils.get(guild.categories, id=832601089936326666) #Put id in
+				for channel in buyinCategory.channels:
+					userName = payload.member.name
+					try:
+						channelNameSplit = channel.name
+						ticket, name = channelNameSplit.split("-", 1)
+						if userName.lower() == name:
+							await channel.send(userMention)
+							embed = discord.Embed(description='You need to close this ticket to open another one!')
+							await channel.send(embed=embed)
+							await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+							return
+						else:
+							pass
+					except ValueError:
 						pass
-				except ValueError:
-					pass
-			verified = discord.utils.get(guild.roles, name=f"Verified")
-			everyone = discord.utils.get(guild.roles, name=f"@everyone")
-			staff = discord.utils.get(guild.roles, name="Staff")
-			embed = discord.Embed(title='EURT Support', description=f"A {staff.mention} member will be with you shortly")
-			embed.add_field(name="\nClosing the ticket", value="To close the ticket react with 🔒 and then ✅", inline=False)
-			embed.set_footer(text='EU Rust Tournaments', icon_url="https://cdn.discordapp.com/attachments/737852831838633984/830488037603409960/RUST_TOURNAMENTS.gif")
-			ticketChannel = await guild.create_text_channel(name=f'ticket-{payload.member.name}', category=buyinCategory)
-			ticketEmbed = await ticketChannel.send(embed=embed)
-			await ticketEmbed.add_reaction("🔒")
-			await ticketChannel.set_permissions(verified, view_channel=False)
-			await ticketChannel.set_permissions(everyone, view_channel=False)
-			await ticketChannel.set_permissions(payload.member, view_channel=True)
-			await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+				verified = discord.utils.get(guild.roles, name=f"Verified")
+				everyone = discord.utils.get(guild.roles, name=f"@everyone")
+				staff = discord.utils.get(guild.roles, name="Staff")
+				embed = discord.Embed(title='EURT Payment', description=f"A {staff.mention} member will be with you shortly")
+				embed.add_field(name="\nClosing the ticket", value="To close the ticket react with 🔒 and then ✅", inline=False)
+				embed.set_footer(text='EU Rust Tournaments', icon_url="https://cdn.discordapp.com/attachments/737852831838633984/830488037603409960/RUST_TOURNAMENTS.gif")
+				ticketChannel = await guild.create_text_channel(name=f'ticket-{payload.member.name}', category=buyinCategory)
+				ticketEmbed = await ticketChannel.send(embed=embed)
+				await ticketEmbed.add_reaction("🔒")
+				await ticketChannel.set_permissions(verified, view_channel=False)
+				await ticketChannel.set_permissions(everyone, view_channel=False)
+				await ticketChannel.set_permissions(payload.member, view_channel=True)
+				await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
 	if payloadChannel.name.startswith("ticket"):
 		if payload.emoji.name == "🔒":
 			if payload.member.id == 816700983899848735:

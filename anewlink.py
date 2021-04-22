@@ -42,24 +42,6 @@ class DiscordBot(commands.Bot):
 client = DiscordBot()
 
 @client.command()
-async def get2(ctx):
-    user = await ctx.bot.client.fetch_user((int(76561199097839336)))
-    rust_game = steam.utils.get(await user.games(), title='Rust')
-    if rust_game == None:
-        print('User doesnt own rust')
-    else:
-        print(rust_game.total_play_time)
-
-@client.command()
-async def get(ctx):
-    user = await ctx.bot.client.fetch_user((int(76561198391325594)))
-    userGames = await user.games()
-    for game in userGames:
-        if game.title == 'Rust':
-            print(game.total_play_time)
-    print(userGames["title": "Rust"])
-
-@client.command()
 async def link(ctx):
     if "verify" in ctx.message.channel.name:
         member = ctx.author
