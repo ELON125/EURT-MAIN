@@ -9,6 +9,7 @@ import random
 import datetime
 import steamfront
 from datetime import timedelta
+from datetime import timezone
 from discord.ext.commands import CommandNotFound
 import datetime
 import pymongo 
@@ -35,8 +36,6 @@ wait = 0
 
 @client.event
 async def on_ready():
-	client.loop.create_task(statuschanger())
-	client.loop.create_task(tlmittcounter())
 	client.loop.create_task(playingmembers())
 	client.loop.create_task(signupboard())
 	print('EURT bot online!')
@@ -73,32 +72,30 @@ async def getdiscord(ctx):
 @client.command()
 @commands.has_role('Staff')
 async def getsteam(ctx):
-    try:
-        messageContent = ctx.message.content
-        cmd, discordid = messageContent.split(" ", 1)
-    except IndexError:
-        await ctx.send('Wrong format! [.getsteam (discord_user_id)]')
-    if collection.count_documents({"DiscordID":f"{discordid}"}) > 0:
-        for dbFind in collection.find({"DiscordID": f"{discordid}"}):
-            steamName = dbFind["SteamName"]
-            steamId = dbFind["SteamID"]
-            steamAvatar = dbFind["SteamAvatar"]
-            steamLink = dbFind["SteamProfileUrl"]
-            discordName = dbFind["DiscordName"]
-            discordID = dbFind["DiscordID"]
-        user = await ctx.bot.client.fetch_user((int(steamId)))
-        embed=discord.Embed(title=f"{discordName}({discordID})", timestamp=user.created_at or None)
-        embed.set_thumbnail(url=steamAvatar)
-        embed.add_field(name="Steam Name", value=f"{steamName}", inline=False)
-        embed.add_field(name="Steam ID", value=f"{steamId}", inline=False)
-        embed.add_field(name="Profile creation time", value=f"{user.created_at}" or "-Private profile-", inline=False)
-        embed.add_field(name="Profile Link", value=f"{steamLink}", inline=False)
-        embed.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=user.avatar_url)
-        await ctx.send(embed=embed)
-    else:
-        embed = discord.Embed(description='ID not in database')
-        await ctx.send(embed=embed)
-        return
+	try:
+		messageContent = ctx.message.content
+		cmd, discordid = messageContent.split(" ", 1)
+	except IndexError:
+		await ctx.send('Wrong format! [.getsteam (discord_user_id)]')
+	if collection.count_documents({"DiscordID":f"{discordid}"}) > 0:
+		for dbFind in collection.find({"DiscordID": f"{discordid}"}):
+			steamName = dbFind["SteamName"]
+			steamId = dbFind["SteamID"]
+			steamAvatar = dbFind["SteamAvatar"]
+			steamLink = dbFind["SteamProfileUrl"]
+			discordName = dbFind["DiscordName"]
+			discordID = dbFind["DiscordID"]
+		embed=discord.Embed(title=f"{discordName}({discordID})")
+		embed.set_thumbnail(url=steamAvatar)
+		embed.add_field(name="Steam Name", value=f"{steamName}", inline=False)
+		embed.add_field(name="Steam ID", value=f"{steamId}", inline=False)
+		embed.add_field(name="Profile Link", value=f"{steamLink}", inline=False)
+		embed.set_footer(text=f"Requested by: {ctx.message.author}", icon_url=ctx.author.avatar_url)
+		await ctx.send(embed=embed)
+	else:
+		embed = discord.Embed(description='ID not in database')
+		await ctx.send(embed=embed)
+		return
 
 @client.command()
 @commands.has_role('Staff')
@@ -431,6 +428,29 @@ async def tlimit(ctx):
 		embed = discord.Embed(description=f'Team limit has been set to {num}!')
 		await ctx.send(embed=embed)
 
+@client.command()
+@commands.has_role('Server moderator')
+async def payedtlimit(ctx):
+	print('Tlimiter recognized')
+	tlimit = open("payed_tlimit.txt", "w")
+	try:
+		x = ctx.message.content 
+		cmd, num = x.split(" ",2)
+		print('1')
+	except SyntaxError:
+		await ctx.send('```Something went wrong!```')
+	a_string = num
+	a_string_lowercase = a_string.lower()
+	contains_letters = a_string_lowercase.islower()	
+	print('2')
+	if contains_letters == True:
+		embed = discord.Embed(description=f'Team limit can only be set to a number!')
+		await ctx.send(embed=embed)
+	else:
+		tlimit.write(num)
+		embed = discord.Embed(description=f'Team limit has been set to {num}!')
+		await ctx.send(embed=embed)
+
 
 @client.command(name='clear')
 @commands.has_permissions(ban_members=True, kick_members=True)
@@ -501,6 +521,74 @@ async def signup(ctx):
 						await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied! \nTeam: {user1}***')
 						embed = discord.Embed(description=f'Succes! The bot will dm you when staff has approved your team!')
 						await ctx.send(embed=embed)
+					else:
+						embed = discord.Embed(description=f'Error! Too many/not enough users tagged, do not @ more/less than {team_limit} members')
+						await ctx.send(embed=embed)
+				else:
+					embed = discord.Embed(description=f'Error! Make sure to @ all your members/remove subs from your sign-up message')
+					await ctx.send(embed=embed)
+					return
+			else:
+				embed = discord.Embed(description=f'Error! {member} You need to be in the team your trying to sign up!')
+				await ctx.send(embed=embed)
+				return
+		else:
+			if ctx.message.author.id == 816700983899848735:
+				return
+			else:
+				embed = discord.Embed(description=f'Wrong format! .signup - @member1@member2@member3....')
+				await ctx.send(embed=embed)
+	if ctx.message.channel.id == 832269492582612992: #Insert new signup channel id 
+		if "-" in ctx.message.content:	
+			string = ctx.message.content
+			substring = "@"
+			count = string.count(substring)
+			tl = open("payed_tlimit.txt", "r")
+			sb = open("substring.txt", "w")
+			sb.write(f"{count}")
+			sb.close()
+			sb2 = open("substring.txt", "r")
+			team_limit = tl.read()
+			guild = client.get_guild(810954832583852083)
+			tee1 = discord.utils.get(guild.roles, name="Signed")
+			banned = discord.utils.get(guild.roles, name="Tournament banned")
+			mentions = ""
+			msg = ctx.message
+			try:
+				x = ctx.message.content
+				user2, user1 = x.split("-", 2)
+			except Exception:
+				embed = discord.Embed(description=f'Error! Remove subs/make sure you only @ {team_limit} members')
+				await ctx.send(embed=embed)
+				return
+			signup = client.get_channel(812836000228311125) # Insert new signup accept channel
+			signupc = client.get_channel(811690381590790215)
+			a_string = user1
+			a_string_lowercase = a_string.lower()
+			contains_letters = a_string_lowercase.islower()	
+			count2 = sb2.read()
+			if ctx.message.author in ctx.message.mentions:
+				for mention in msg.mentions:
+					mentions = mentions + " " + mention.mention
+				for mention in msg.mentions:
+					member = mention
+					if tee1 in member.roles:
+						embed = discord.Embed(description=f'{member} is already in a team!')
+						await ctx.send(embed=embed)
+						return
+					else:
+						if banned in member.roles:
+							embed = discord.Embed(description=f'{member} is Tournament banned!')
+							await ctx.send(embed=embed)
+							return
+						else:
+							pass
+				if contains_letters == False:
+					if count2 == team_limit:
+						await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied! \nTeam: {user1}***') # Insert new signup accept channel
+						embed = discord.Embed(description=f'Succes! The bot will dm you when staff has approved your team!\n React with 💰 when your ready to pay, this needs to be done, otherwise your team wont be accepted')
+						reactEmbed = await ctx.send(embed=embed)
+						await reactEmbed.add_reaction("💰")
 					else:
 						embed = discord.Embed(description=f'Error! Too many/not enough users tagged, do not @ more/less than {team_limit} members')
 						await ctx.send(embed=embed)
@@ -599,7 +687,8 @@ async def on_message(message):
 		except Exception:
 			pass
 	if message.content == ".giveaway":
-		staff = discord.utils.get(ctx.guild.roles, name="Staff")
+		guild = client.get_guild(810954832583852083)
+		staff = discord.utils.get(guild.roles, name="Staff")
 		if staff in message.author.roles:
 			embed = discord.Embed(description=f'Wrong format! .giveaway (time),(prize),(url to pic)')
 			await substi.send(embed=embed)
@@ -670,7 +759,6 @@ async def sub(ctx):
 			member = ctx.message.author
 			member1 = ctx.message.mentions[0]
 			member2 = ctx.message.mentions[1]
-			return
 		except IndexError:
 			signupc = client.get_channel(817972037057511454)
 			embed = discord.Embed(description=f'Wrong format! .sub - @user + @user')
@@ -858,12 +946,13 @@ async def on_raw_reaction_add(payload):
 		Voted = discord.utils.get(guild.roles, name="Voted")
 		await member.add_roles(Voted)
 	payloadChannel = client.get_channel(payload.channel_id)
+	guild = client.get_guild(810954832583852083)
 	if payload.emoji.name == "📩":
+		ticketCategory = discord.utils.get(guild.categories, id=832599966953766922)
 		if payload.channel_id == 830523406348845066:
 			userMention = f'<@{payload.member.id}>'
 			requestSupportChannel = client.get_channel(830523406348845066)
-			requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058)
-			ticketCategory = discord.utils.get(client.guild.categories, id=832599966953766922) #Put id in
+			requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058) #Put id in
 			for channel in ticketCategory.channels:
 				userName = payload.member.name
 				try:
@@ -886,6 +975,42 @@ async def on_raw_reaction_add(payload):
 			embed.add_field(name="\nClosing the ticket", value="To close the ticket react with 🔒 and then ✅", inline=False)
 			embed.set_footer(text='EU Rust Tournaments', icon_url="https://cdn.discordapp.com/attachments/737852831838633984/830488037603409960/RUST_TOURNAMENTS.gif")
 			ticketChannel = await guild.create_text_channel(name=f'ticket-{payload.member.name}', category=ticketCategory)
+			ticketEmbed = await ticketChannel.send(embed=embed)
+			await ticketEmbed.add_reaction("🔒")
+			await ticketChannel.set_permissions(verified, view_channel=False)
+			await ticketChannel.set_permissions(everyone, view_channel=False)
+			await ticketChannel.set_permissions(payload.member, view_channel=True)
+			await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+	if payload.emoji.name == "💰":
+		payloadChannel = client.get_channel(payload.channel_id)
+		if payload.channel_id == 832269492582612992:
+			userMention = f'<@{payload.member.id}>'
+			requestSupportChannel = client.get_channel(830523406348845066)
+			requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058)
+			guild = client.get_guild(810954832583852083)
+			buyinCategory = discord.utils.get(guild.categories, id=832601089936326666) #Put id in
+			for channel in buyinCategory.channels:
+				userName = payload.member.name
+				try:
+					channelNameSplit = channel.name
+					ticket, name = channelNameSplit.split("-", 1)
+					if userName.lower() == name:
+						await channel.send(userMention)
+						embed = discord.Embed(description='You need to close this ticket to open another one!')
+						await channel.send(embed=embed)
+						await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+						return
+					else:
+						pass
+				except ValueError:
+					pass
+			verified = discord.utils.get(guild.roles, name=f"Verified")
+			everyone = discord.utils.get(guild.roles, name=f"@everyone")
+			staff = discord.utils.get(guild.roles, name="Staff")
+			embed = discord.Embed(title='EURT Support', description=f"A {staff.mention} member will be with you shortly")
+			embed.add_field(name="\nClosing the ticket", value="To close the ticket react with 🔒 and then ✅", inline=False)
+			embed.set_footer(text='EU Rust Tournaments', icon_url="https://cdn.discordapp.com/attachments/737852831838633984/830488037603409960/RUST_TOURNAMENTS.gif")
+			ticketChannel = await guild.create_text_channel(name=f'ticket-{payload.member.name}', category=buyinCategory)
 			ticketEmbed = await ticketChannel.send(embed=embed)
 			await ticketEmbed.add_reaction("🔒")
 			await ticketChannel.set_permissions(verified, view_channel=False)
@@ -924,20 +1049,6 @@ async def statuschanger():
 				await asyncio.sleep(4)
 				await client.change_presence(status=discord.Status.idle, activity=discord.Game(f'{member.name}'))
 				await asyncio.sleep(4)
-
-async def tlmittcounter():
-	while True:
-		try:
-			tlimit = open("tlimit.txt", "r")
-			teamlimit = tlimit.read()
-			tcounter = open("team_counter.txt", "r")
-			team_counter = tcounter.read()
-			channel = client.get_channel(818795394187132938)
-			message = await channel.fetch_message(818795506699862036)
-			await message.edit(content=f"```Team limit: {teamlimit}```")
-			await asyncio.sleep(2)
-		except Exception:
-			pass
 
 async def playingmembers():
 	while(True):

@@ -32,12 +32,13 @@ async def on_raw_reaction_add(payload):
 	if payload.channel.id == 832269492582612992: #insert payed channel id
 		if payload.emoji == "💰":
 			payloadChannel = client.get_channel(payload.channel_id)
-			if payload.emoji.name == "📩":
+			if payload.emoji.name == "💰":
 				if payload.channel_id == 830523406348845066:
 					userMention = f'<@{payload.member.id}>'
 					requestSupportChannel = client.get_channel(830523406348845066)
 					requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058)
-					buyinCategory = discord.utils.get(client.guild.categories, id=832601089936326666) #Put id in
+					guild = client.get_guild(810954832583852083)
+					buyinCategory = discord.utils.get(guild.categories, id=832601089936326666) #Put id in
 					for channel in buyinCategory.channels:
 						userName = payload.member.name
 						try:
@@ -175,7 +176,7 @@ async def signup(ctx):
 			else:
 				embed = discord.Embed(description=f'Wrong format! .signup - @member1@member2@member3....')
 				await ctx.send(embed=embed)
-	if ctx.message.channel.id == 811690381590790215: #Insert new signup channel id 
+	if ctx.message.channel.id == 832269492582612992: #Insert new signup channel id 
 		if "-" in ctx.message.content:	
 			string = ctx.message.content
 			substring = "@"
