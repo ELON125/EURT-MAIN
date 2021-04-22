@@ -467,6 +467,12 @@ async def signup(ctx):
 	if "signup" in ctx.message.channel.name:
 		if "-" in ctx.message.content:	
 			global team_limit
+			if ctx.message.channel.id == 811690381590790215:
+				tl = open("tlimit.txt", "r")
+				team_limit = tl.read()
+			elif ctx.message.channel.id == 832269492582612992:
+				tl = open("payed_tlimit.txt", "r")
+				team_limit = tl.read()
 			string = ctx.message.content
 			substring = "@"
 			count = string.count(substring)
@@ -508,8 +514,6 @@ async def signup(ctx):
 							pass
 				if contains_letters == False:
 					if ctx.message.channel.id == 811690381590790215:
-						tl = open("tlimit.txt", "r")
-						team_limit = tl.read()
 						signup = client.get_channel(812836000228311125)
 						if count2 == team_limit:
 							add_reaction_msg = await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied! \nTeam: {user1}***')
@@ -521,8 +525,6 @@ async def signup(ctx):
 							embed = discord.Embed(description=f'Error! Too many/not enough users tagged, do not @ more/less than {team_limit} members')
 							await ctx.send(embed=embed)
 					elif ctx.message.channel.id == 832269492582612992:
-						tl = open("payed_tlimit.txt", "r")
-						team_limit = tl.read()
 						signup = client.get_channel(834439221615001660)
 						if count2 == team_limit:
 							add_reaction_msg = await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied for buy-in tournament! \nTeam: {user1}***') # Insert new signup accept channel
