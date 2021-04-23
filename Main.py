@@ -21,6 +21,7 @@ client.remove_command('help')
 dbClient = MongoClient("mongodb+srv://D1P:D1P9812@hokuspokusdb.gehgp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = dbClient["EURTDatabase"]
 collection = db["newSteamLink"]
+verificationCollection = db["buy-inDatabase"]
 wait = 0
 	
 #keys = await database.keys()
@@ -530,6 +531,8 @@ async def signup(ctx):
 							add_reaction_msg = await signup.send(f'***{ctx.message.author}({ctx.message.author.id}) has applied for buy-in tournament! \nTeam: {user1}***') # Insert new signup accept channel
 							embed = discord.Embed(description=f'Succes! The bot will dm you when staff has approved your team!\n React with 💰 when your ready to pay, this needs to be done, otherwise your team wont be accepted')
 							reactEmbed = await ctx.send(embed=embed)
+							post = {"DiscordId":f"{ctx.message.author.id}", "ReactEmbedId": f"{reactEmbed.id}"}
+							verificationCollection.insert_one(post)
 							await add_reaction_msg.add_reaction("✅")
 							await add_reaction_msg.add_reaction("❎")
 							await reactEmbed.add_reaction("💰")
@@ -647,7 +650,7 @@ async def on_raw_reaction_add(payload):
 	access = discord.utils.get(guild.roles, name="Server moderator")
 	msg = await client.get_channel(payload.channel_id).fetch_message(payload.message_id)
 	channel = client.get_channel(payload.channel_id)
-	if channel.name.startswith("teamp-accept"):
+	if channel.name.startswith("team-accept"):
 		if payload.user_id == 816700983899848735:
 			return
 		else:
@@ -797,41 +800,47 @@ async def on_raw_reaction_add(payload):
 		if payload.member.id == 816700983899848735:
 			return
 		else:
-			payloadChannel = client.get_channel(payload.channel_id)
-			if payload.channel_id == 832269492582612992:
-				userMention = f'<@{payload.member.id}>'
-				requestSupportChannel = client.get_channel(830523406348845066)
-				requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058)
-				guild = client.get_guild(810954832583852083)
-				buyinCategory = discord.utils.get(guild.categories, id=832601089936326666) #Put id in
-				for channel in buyinCategory.channels:
-					userName = payload.member.name
-					try:
-						channelNameSplit = channel.name
-						ticket, name = channelNameSplit.split("-", 1)
-						if userName.lower() == name:
-							await channel.send(userMention)
-							embed = discord.Embed(description='You need to close this ticket to open another one!')
-							await channel.send(embed=embed)
-							await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
-							return
-						else:
+			payloadMessage = await payloadChannel.fetch_message(payload.message_id)
+			if verificationCollection.count_documents({"DisocordId":f"{payload.member.id}", "ReactEmbedId":f"{payloadMessage.id}"}) > 0:
+				payloadChannel = client.get_channel(payload.channel_id)
+				if payload.channel_id == 832269492582612992:
+					userMention = f'<@{payload.member.id}>'
+					requestSupportChannel = client.get_channel(830523406348845066)
+					requestSupportMessage = await requestSupportChannel.fetch_message(830526877566763058)
+					guild = client.get_guild(810954832583852083)
+					buyinCategory = discord.utils.get(guild.categories, id=832601089936326666) #Put id in
+					for channel in buyinCategory.channels:
+						userName = payload.member.name
+						try:
+							channelNameSplit = channel.name
+							ticket, name = channelNameSplit.split("-", 1)
+							if userName.lower() == name:
+								await channel.send(userMention)
+								embed = discord.Embed(description='You need to close this ticket to open another one!')
+								await channel.send(embed=embed)
+								await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+								return
+							else:
+								pass
+						except ValueError:
 							pass
-					except ValueError:
-						pass
-				verified = discord.utils.get(guild.roles, name=f"Verified")
-				everyone = discord.utils.get(guild.roles, name=f"@everyone")
-				staff = discord.utils.get(guild.roles, name="Staff")
-				embed = discord.Embed(title='EURT Payment', description=f"A {staff.mention} member will be with you shortly")
-				embed.add_field(name="\nClosing the ticket", value="To close the ticket react with 🔒 and then ✅", inline=False)
-				embed.set_footer(text='EU Rust Tournaments', icon_url="https://cdn.discordapp.com/attachments/737852831838633984/830488037603409960/RUST_TOURNAMENTS.gif")
-				ticketChannel = await guild.create_text_channel(name=f'ticket-{payload.member.name}', category=buyinCategory)
-				ticketEmbed = await ticketChannel.send(embed=embed)
-				await ticketEmbed.add_reaction("🔒")
-				await ticketChannel.set_permissions(verified, view_channel=False)
-				await ticketChannel.set_permissions(everyone, view_channel=False)
-				await ticketChannel.set_permissions(payload.member, view_channel=True)
-				await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+					verified = discord.utils.get(guild.roles, name=f"Verified")
+					everyone = discord.utils.get(guild.roles, name=f"@everyone")
+					staff = discord.utils.get(guild.roles, name="Staff")
+					embed = discord.Embed(title='EURT Payment', description=f"A {staff.mention} member will be with you shortly")
+					embed.add_field(name="\nClosing the ticket", value="To close the ticket react with 🔒 and then ✅", inline=False)
+					embed.set_footer(text='EU Rust Tournaments', icon_url="https://cdn.discordapp.com/attachments/737852831838633984/830488037603409960/RUST_TOURNAMENTS.gif")
+					ticketChannel = await guild.create_text_channel(name=f'ticket-{payload.member.name}', category=buyinCategory)
+					ticketEmbed = await ticketChannel.send(embed=embed)
+					await ticketEmbed.add_reaction("🔒")
+					await ticketChannel.set_permissions(verified, view_channel=False)
+					await ticketChannel.set_permissions(everyone, view_channel=False)
+					await ticketChannel.set_permissions(payload.member, view_channel=True)
+					await requestSupportMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+					return
+			else:
+				await payloadMessage.remove_reaction(emoji=payload.emoji,member=payload.member)
+				return
 	if payloadChannel.name.startswith("ticket"):
 		if payload.emoji.name == "🔒":
 			if payload.member.id == 816700983899848735:
