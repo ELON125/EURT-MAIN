@@ -32,7 +32,7 @@ async def on_ready():
 async def ban(ctx):
 	banned = guild.get_role()
 	try:
-		cmd, user, time = ctx.message.content.split(" ", 1)
+		cmd, user, time or None = ctx.message.content.split(" ", 1 or 0)
 	except IndexError:
 		print('Wrong format')
 	await ctx.message.mentions[0].add_roles(banned)
