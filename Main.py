@@ -14,6 +14,8 @@ from discord.ext.commands import CommandNotFound
 import datetime
 import pymongo 
 from pymongo import MongoClient
+import io
+import chat_exporter
 
 intents = discord.Intents.all()
 client = commands.Bot(command_prefix='.', intents=intents)
@@ -801,7 +803,7 @@ async def on_raw_reaction_add(payload):
 			return
 		else:
 			payloadMessage = await payloadChannel.fetch_message(payload.message_id)
-			if verificationCollection.count_documents({"DisocordId":f"{payload.member.id}", "ReactEmbedId":f"{payloadMessage.id}"}) > 0:
+			if verificationCollection.count_documents({"DiscordId":f"{payload.member.id}", "ReactEmbedId":f"{payloadMessage.id}"}) > 0:
 				payloadChannel = client.get_channel(payload.channel_id)
 				if payload.channel_id == 832269492582612992:
 					userMention = f'<@{payload.member.id}>'
@@ -854,6 +856,25 @@ async def on_raw_reaction_add(payload):
 			if payload.member.id == 816700983899848735:
 				return
 			else:
+				embed = discord.Embed(description='Ticket will close in 5 seconds')
+				await payloadChannel.send(embed=embed)
+				limit = None
+				conversationUsers = []
+				async for message in payloadChannel.history(limit=None):
+					if message.author.id in conversationUsers or message.author.id == 816700983899848735:
+						pass
+					else:
+						conversationUsers.append(message.author.id)
+				transcript = await chat_exporter.export(payloadChannel, limit)
+				transcript_file = discord.File(io.BytesIO(transcript.encode()),filename=f"transcript-{payloadChannel.name}.html")
+				transcriptChannel = client.get_channel(835214538004889600)
+				embed = discord.Embed(title=f'{payloadChannel.name} closed', description=f"Ticket was closed by {payload.member}", timestamp=datetime.datetime.now())
+				embed.set_footer(text=f"EURT",icon_url="https://cdn.discordapp.com/attachments/737852831838633984/830488037603409960/RUST_TOURNAMENTS.gif")
+				for memberid in conversationUsers:
+					dmUser = guild.get_member(memberid)
+					dmChannel = await dmUser.create_dm()
+					await dmChannel.send(embed=embed, file=transcript_file)
+				await transcriptChannel.send(embed=embed)
 				await payloadChannel.delete()
 
 #DO NOT TOUCH // SIGNUP SECTION
