@@ -23,6 +23,7 @@ client.remove_command('help')
 dbClient = MongoClient("mongodb+srv://D1P:D1P9812@hokuspokusdb.gehgp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = dbClient["EURTDatabase"]
 collection = db["newSteamLink"]
+banCollection = db["EURT-Bans/Mutes"]
 wait = 0
 
 
@@ -39,40 +40,68 @@ async def save(ctx):
 	transcript_file = discord.File(io.BytesIO(transcript.encode()),filename=f"transcript-{ctx.channel.name}.html")
 	await ctx.send(file=transcript_file)
 
+@client.event 
+async def on_member_join(member):
+	now = datetime.datetime.today()
+	two_months_ago = now - datetime.timedelta(days=120)
+	account_age = member.created_at
+	guild = client.get_guild(810954832583852083)
+	print(now, two_months_ago, account_age)
+	verified = discord.utils.get(guild.roles, name=f"Verified")
+	verified = discord.utils.get(guild.roles, name=f"Muted")
+	if collection.count_documents({"DiscordID":f"{member.id}"}) > 0:
+		await member.add_roles(verified)
+	if banCollection.count_documents({"DiscordID":f"{member.id}"}) > 0
+		await member.add_roles(muted)
+	if account_age > two_months_ago:
+		botlogs = client.get_channel(822442461149790230)
+		embed=discord.Embed(title=f"{member} might be an alt!")
+		embed.add_field(name="User id:", value=f"```{member.id}```", inline=False)
+		embed.add_field(name="User creation date:", value=f"```{member.created_at}```", inline=False)
+		embed.set_footer(text="EU Rust Tournaments")
+		await botlogs.send(embed=embed)
+	else:
+		return
+
 @client.event
+@commands.has_role('Staff')
 async def ban(ctx):
 	guild = client.get_guild(810954832583852083)
 	banned = guild.get_role()
 	try:
 		cmd, user, timeAmount= ctx.message.content.split(" ", 1)
 	except IndexError:
-		print('Wrong format')
+		embed = discord.Embed(description=f"Wrong format! format: .ban (user) (time_in_hours)")
+		await ctx.send(embed=embed)
+	unbanDate = datetime.datetime.now() - datetime.timedelta(hours=int(timeAmount))
+	post = {"DiscordName": f"{ctx.message.mentions[0]}", "DiscordID": f"{ctx.message.mentions[0].id}", "bannedBy":f"{ctx.message.author}", "banTime": f"{timeAmount}", "unbanTime":f"{unbanDate}"}
+	banCollection.insert_one(post)
 	await ctx.message.mentions[0].add_roles(banned)
-	post = {"DiscordName": f"{ctx.message.mentions[0]}", "DiscordID": f"{ctx.message.mentions[0].id}", "bannedBy":f"{ctx.message.author}"}
-	collection.insert_one(post)
-	print('User has been banned')
+	await ctx.guild.ban(user=ctx.message.mentions[0])
+	embed = discord.Embed(description=f"{user} has been banned til {unbanDate}")
+	await ctx.send(embed=embed)
     
 async def something():
 	while True:
 		guild = client.get_guild(810954832583852083)
-		banned = guild.get_role()#insert role id
-		muted = guild.get_role()
-		for dbFind in collection.find({"banType": "tempBan"}):
+		muted = guild.get_role(811700299597086750)
+		for dbFind in banCollection.find():
 			userId = dbFind["memberId"]
-			user = guild.get_member(int(userId))
-			unbanTime = dbFind["unbanTime"]
+			user = client.get_user(int(userId))
+			unbanTimeUnconverted = dbFind["unbanTime"]
+			unbanTime = datetime.datetime.strptime(unbanTimeUnconverted)
 			if unbanTime > datetime.datetime.now:
 				return
 			else:
-				await user.remove_roles(Banned)
-		for dbFind in collection.find({"muteType": "tempMute"}):
+				await guild.unban(user)
+		for dbFind in banCollection.find():
 			user = guild.get_member(int(userId))
 			unmuteTime = dbFind["unmuteTime"]
 			if unmuteTime > datetime.datetime.now:
 				return
 			else:
 				await user.remove_roles(muted)
-		await asyncio.sleep(600)
+		await asyncio.sleep(1800)
 
 
 

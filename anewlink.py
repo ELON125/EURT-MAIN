@@ -41,6 +41,7 @@ class DiscordBot(commands.Bot):
 
 client = DiscordBot()
 
+#Make so when user is already in database, if they dont have verified role give them verified
 @client.command()
 async def link(ctx):
     if "verify" in ctx.message.channel.name:
@@ -52,45 +53,44 @@ async def link(ctx):
         except Exception:
             embed = discord.Embed(description='Wrong format! format: .link (steamid64)')
             await ctx.send(embed=embed)
-        verified = discord.utils.get(ctx.guild.roles, name=f"Verified")
         steamIdString = steamid64
         steamIdString_lowercase = steamIdString.lower()
         ifSteamId64 = steamIdString_lowercase.islower()
+        user = await ctx.bot.client.fetch_user((int(steamid64)))
+        rust_game = steam.utils.get(await user.games(), title='Rust')
         if ifSteamId64 == True:
             embed = discord.Embed(description='This is not an id64')
             await ctx.send(embed=embed)
             return
-        else:
-            if newcollection.count_documents({"SteamID":f"{steamid64}"}) > 0:
-                embed = discord.Embed(description='This account is already linked')
-                await ctx.send(embed=embed)
+        elif newcollection.count_documents({"SteamID":f"{steamid64}"}) > 0:
+            embed = discord.Embed(description='This account is already linked')
+            await ctx.send(embed=embed)
+            if verified in ctx.member.roles:
                 return
             else:
-                user = await ctx.bot.client.fetch_user((int(steamid64)))
-                if user == None:
-                    embed = discord.Embed(description='Error! User not found, make sure the id64 is correct')
-                    await ctx.send(embed=embed)
-                    return
-                else:
-                    if user.is_private() == True:
-                        embed = discord.Embed(description='Make sure the steam profile is public\nWe use this to collect information to prevent scripters/cheaters to play')
-                        await ctx.send(embed=embed)
-                    else:
-                        rust_game = steam.utils.get(await user.games(), title='Rust')
-                        if rust_game == None:
-                            embed = discord.Embed(description='This steam account does not own rust')
-                            await ctx.send(embed=embed)
-                            return
-                        if user.created_at == None:
-                            embed = discord.Embed(description='Make sure the steam profile is public\nWe use this to collect information to prevent scripters/cheaters to play')
-                            await ctx.send(embed=embed)
-                            return
-                        user.profile_url = f"https://steamcommunity.com/profiles/{steamid64}/"
-                        post = {"DiscordName": f"{member.name}", "DiscordAvatar": f"{member.avatar_url}", "DiscordID": f"{member.id}", "DiscordCreationDate": f"{member.created_at}", "SteamName": f"{user.name}", "SteamProfileUrl": f"{user.profile_url}", "SteamID": f"{user.id64}", "SteamAvatar": f"{user.avatar_url}", "SteamCreatedAt": f"{user.created_at}", "RustHours":f"{rust_game.total_play_time}"}
-                        newcollection.insert_one(post)
-                        embed = discord.Embed(description='Your steam account has been linked')
-                        await ctx.author.add_roles(verified)
-                        await ctx.send(embed=embed)
+                await member.add_roles(verified)
+                return
+        elif user == None:
+            embed = discord.Embed(description='Error! User not found, make sure the id64 is correct')
+            await ctx.send(embed=embed)
+            return
+        elif user.is_private() == True:
+            embed = discord.Embed(description='Make sure the steam profile is public\nWe use this to collect information to prevent scripters/cheaters to play')
+            await ctx.send(embed=embed)
+        elif rust_game == None:
+            embed = discord.Embed(description='This steam account does not own rust')
+            await ctx.send(embed=embed)
+            return
+        elif user.created_at == None:
+            embed = discord.Embed(description='Make sure the steam profile is public\nWe use this to collect information to prevent scripters/cheaters to play')
+            await ctx.send(embed=embed)
+            return
+        user.profile_url = f"https://steamcommunity.com/profiles/{steamid64}/"
+        post = {"DiscordName": f"{member.name}", "DiscordAvatar": f"{member.avatar_url}", "DiscordID": f"{member.id}", "DiscordCreationDate": f"{member.created_at}", "SteamName": f"{user.name}", "SteamProfileUrl": f"{user.profile_url}", "SteamID": f"{user.id64}", "SteamAvatar": f"{user.avatar_url}", "SteamCreatedAt": f"{user.created_at}", "RustHours":f"{rust_game.total_play_time}"}
+        newcollection.insert_one(post)
+        embed = discord.Embed(description='Your steam account has been linked')
+        await ctx.author.add_roles(verified)
+        await ctx.send(embed=embed)
     else:
         return
 
