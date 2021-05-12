@@ -650,7 +650,7 @@ async def sub(ctx):
 async def on_raw_reaction_add(payload):
 	guild = client.get_guild(payload.guild_id)
 	access = discord.utils.get(guild.roles, name="Server moderator")
-	msg = await client.get_channel(payload.channel_id).fetch_message(payload.message_id)
+	msg = guild.fetch_message(payload.message_id)
 	channel = client.get_channel(payload.channel_id)
 	if channel.name.startswith("team-accept"):
 		if payload.user_id == 816700983899848735:
