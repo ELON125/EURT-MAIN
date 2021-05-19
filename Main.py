@@ -12,7 +12,7 @@ from datetime import timedelta
 from datetime import timezone
 from discord.ext.commands import CommandNotFound
 import datetime
-import pymongo 
+import pymongo,dns
 from pymongo import MongoClient
 import io
 import chat_exporter
@@ -40,6 +40,7 @@ wait = 0
 @client.event
 async def on_ready():
 	client.loop.create_task(playingmembers())
+	client.loop.create_task(statuschanger())
 	client.loop.create_task(signupboard())
 	print('EURT bot online!')
 	global database
@@ -501,8 +502,6 @@ async def signup(ctx):
 			count2 = sb2.read()
 			if ctx.message.author in ctx.message.mentions:
 				for mention in msg.mentions:
-					mentions = mentions + " " + mention.mention
-				for mention in msg.mentions:
 					member = mention
 					if tee1 in member.roles:
 						embed = discord.Embed(description=f'{member} is already in a team!')
@@ -650,8 +649,8 @@ async def sub(ctx):
 async def on_raw_reaction_add(payload):
 	guild = client.get_guild(payload.guild_id)
 	access = discord.utils.get(guild.roles, name="Server moderator")
-	msg = guild.fetch_message(payload.message_id)
-	channel = client.get_channel(payload.channel_id)
+	msg = await guild.get_channel(payload.channel_id).fetch_message(payload.message_id)
+	channel = guild.get_channel(payload.channel_id)
 	if channel.name.startswith("team-accept"):
 		if payload.user_id == 816700983899848735:
 			return
@@ -720,23 +719,33 @@ async def on_raw_reaction_add(payload):
 	if payload.channel_id == 817913002120314930:
 		if payload.emoji.name == "♻️":
 			if access in payload.member.roles:
-				normal_signups = await guild.get_channel(811690381590790215)
-				buyin_signups = await guild.get_channel(832269492582612992)
-				normal_substitutions = await guild.get_channel(817972037057511454)
-				buyin_substitutions = await guild.get_channel(832269645464731668)
-				normal_scorechannel = await guild.get_channel(812322092023808010)
-				buyin_scorechannel = await guild.get_channel(832269776800710737)
-				normal_teamaccept = await guild.get_channel(812836000228311125)
-				buyin_teamaccept = await guild.get_channel(834439221615001660)
+				message = await channel.send('Clearing has started, this might take a while...')
+				normal_signups = guild.get_channel(811690381590790215)
+				buyin_signups = guild.get_channel(832269492582612992)
+				normal_substitutions = guild.get_channel(817972037057511454)
+				buyin_substitutions = guild.get_channel(832269645464731668)
+				normal_scorechannel = guild.get_channel(812322092023808010)
+				buyin_scorechannel = guild.get_channel(832269776800710737)
+				normal_teamaccept = guild.get_channel(812836000228311125)
+				buyin_teamaccept = guild.get_channel(834439221615001660)
 				signed = discord.utils.get(guild.roles, name="Signed")
 				guild = client.get_guild(payload.guild_id)
-				amount = 400
+				amount = 200
+				embed = discord.Embed(description='Use this format!\n.signup - @member1@member2@member3....')
 				await normal_signups.purge(limit=amount)
+				await normal_signups.send(embed=embed)
 				await buyin_signups.purge(limit=amount)
+				await buyin_signups.send(embed=embed)
+				embed = discord.Embed(description='Use this format!\n.sub - (@user1) + (@user2)')
 				await normal_substitutions.purge(limit=amount)
+				await normal_substitutions.send(embed=embed)
 				await buyin_substitutions.purge(limit=amount)
+				await buyin_substitutions.send(embed=embed)
+				embed = discord.Embed(description='Use this format!\nWin: (@Your team) vs (@Enemy team) score: (score)')
 				await normal_scorechannel.purge(limit=amount)
+				await normal_scorechannel.send(embed=embed)
 				await buyin_scorechannel.purge(limit=amount)
+				await buyin_scorechannel.send(embed=embed)
 				await normal_teamaccept.purge(limit=amount)
 				await buyin_teamaccept.purge(limit=amount)
 				for y in range(1, 65):
@@ -746,15 +755,10 @@ async def on_raw_reaction_add(payload):
 						await member.remove_roles(team)
 						await member.remove_roles(signed)
 					await asyncio.sleep(1)
-				for x in range(1,65):
-					team = discord.utils.get(guild.roles, name=f"Buy-in Team {y}")
-					signed = discord.utils.get(guild.roles, name=f"Signed")
-					for member in team.members:
-						await member.remove_roles(team)
-						await member.remove_roles(signed)
-					await asyncio.sleep(1)
-				await msg.remove_reaction(emoji=payload.emoji,member=payload.member)
-				return
+				await message.delete()
+				message = await channel.send('Clearing done...')
+				await asyncio.sleep(10)
+				await message.delete()
 		else:
 			await msg.remove_reaction(emoji=payload.emoji,member=payload.member)
 			return
