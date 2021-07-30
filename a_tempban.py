@@ -51,7 +51,7 @@ async def on_member_join(member):
 	verified = discord.utils.get(guild.roles, name=f"Muted")
 	if collection.count_documents({"DiscordID":f"{member.id}"}) > 0:
 		await member.add_roles(verified)
-	if banCollection.count_documents({"DiscordID":f"{member.id}"}) > 0
+	if banCollection.count_documents({"DiscordID":f"{member.id}"}) > 0:
 		await member.add_roles(muted)
 	if account_age > two_months_ago:
 		botlogs = client.get_channel(822442461149790230)

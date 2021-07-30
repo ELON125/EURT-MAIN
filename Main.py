@@ -31,10 +31,7 @@ wait = 0
 	#	value = await database.get(key)
 	#	print(key, value)
 
-#Lav challonge matchboard acceptance med deres api
-#Save alle profiles som mefix example så du ikke skal gøre det i en command()(ergo lav gem i databasen alt information om deres stem profile så det er nemt at fetch information), ergo det tager langt tid at søge hele  databasen og convert
-#Remvork temove team cmd
-#How to make EURC style accept to get in team(wait for message.mentions reaction)
+#// How to make eurc style accept command(client.wait_for('message', check=check, timeout = 60)
 
 
 @client.event
@@ -860,7 +857,7 @@ async def on_raw_reaction_add(payload):
 			if payload.member.id == 816700983899848735:
 				return
 			else:
-				embed = discord.Embed(description='Ticket will close in 5 seconds')
+				embed = discord.Embed(description='Closing ticket...')
 				await payloadChannel.send(embed=embed)
 				limit = None
 				conversationUsers = []
